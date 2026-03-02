@@ -1,0 +1,2 @@
+# Reproducibility-Safety-Barrier-Certificates-for-Heterogeneous-Multi-Robot-Systems
+Safety barrier certificates: provably safe controllers that wrap around nominal controllers and activate only when a collision is imminent. Their approach handles heterogeneity explicitly; agile robots naturally shoulder more collision avoidance responsibility than sluggish robots, without requiring exact knowledge of neighbors' dynamic parameters.

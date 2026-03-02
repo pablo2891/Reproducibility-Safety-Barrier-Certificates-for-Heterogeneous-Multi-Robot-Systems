@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hetero-sbc-reproduction"
+version = "0.1.0"
+description = "Reproduction scaffold for heterogeneous safety barrier certificate experiments."
+requires-python = ">=3.10"
+dependencies = [
+  "numpy",
+  "scipy",
+  "matplotlib",
+  "cvxopt",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+

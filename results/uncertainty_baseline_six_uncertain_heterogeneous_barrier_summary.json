@@ -1,0 +1,59 @@
+{
+  "name": "uncertainty_baseline_six",
+  "controller": "uncertain_heterogeneous_barrier",
+  "summary": {
+    "min_clearance": 0.014410653178296262,
+    "min_cbf": 0.2545095464609445,
+    "collision": false,
+    "mean_qp_ms": 0.5938405806066132,
+    "p95_qp_ms": 0.6325049403434002,
+    "max_qp_ms": 6.44043766563603,
+    "completion_step": null,
+    "mean_goal_error": 2.754450061420094,
+    "mean_control_deviation": 1.1995345864525813,
+    "per_agent_control_deviation": [
+      0.7679133045456695,
+      1.1849061225418722,
+      1.3212403211069816,
+      1.5098607724096083,
+      1.0120858232291674,
+      1.4012011748821878
+    ],
+    "final_mean_alpha_estimate_error": 0.4231805109585747
+  },
+  "metadata": {
+    "accel_limits": [
+      0.6,
+      1.2,
+      1.2,
+      1.2,
+      1.2,
+      1.2
+    ],
+    "speed_limits": [
+      0.6,
+      0.6,
+      0.6,
+      0.6,
+      0.6,
+      0.6
+    ],
+    "gamma": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "radii": [
+      0.4,
+      0.2,
+      0.2,
+      0.2,
+      0.2,
+      0.2
+    ],
+    "safety_buffer": 0.0
+  }
+}

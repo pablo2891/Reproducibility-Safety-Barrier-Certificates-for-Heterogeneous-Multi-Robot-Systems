@@ -56,13 +56,60 @@ def _step_dynamics(
     speed_limits: np.ndarray,
     dt: float,
 ) -> tuple[np.ndarray, np.ndarray]:
-    new_velocities = velocities + dt * controls
-    speeds = np.linalg.norm(new_velocities, axis=1)
+    unclipped_velocities = velocities + dt * controls
+    new_velocities = unclipped_velocities.copy()
+    speeds = np.linalg.norm(unclipped_velocities, axis=1)
     for i, speed in enumerate(speeds):
         if speed > speed_limits[i]:
             new_velocities[i] *= speed_limits[i] / speed
-    new_positions = positions + dt * new_velocities
+    # Use the average velocity over the step so the discrete dynamics
+    # better match the double-integrator model under bounded acceleration.
+    new_positions = positions + 0.5 * dt * (velocities + new_velocities)
     return new_positions, new_velocities
+
+
+def _clip_controls(controls: np.ndarray, accel_limits: np.ndarray) -> np.ndarray:
+    clipped = controls.copy()
+    for i, limit in enumerate(accel_limits):
+        clipped[i] = np.clip(clipped[i], -limit, limit)
+    return clipped
+
+
+def _enforce_discrete_safety(
+    positions: np.ndarray,
+    velocities: np.ndarray,
+    controls: np.ndarray,
+    accel_limits: np.ndarray,
+    speed_limits: np.ndarray,
+    radii: np.ndarray,
+    safety_buffer: float,
+    dt: float,
+    passes: int = 8,
+) -> np.ndarray:
+    adjusted = _clip_controls(controls, accel_limits)
+    for _ in range(passes):
+        predicted_positions, _ = _step_dynamics(positions, velocities, adjusted, speed_limits, dt)
+        updated = False
+        for i in range(positions.shape[0]):
+            for j in range(i + 1, positions.shape[0]):
+                safe_distance = pairwise_safe_distance(radii, i, j, safety_buffer)
+                delta = predicted_positions[i] - predicted_positions[j]
+                distance = float(np.linalg.norm(delta))
+                if distance >= safe_distance:
+                    continue
+                if distance <= 1e-9:
+                    delta = positions[i] - positions[j]
+                    distance = max(float(np.linalg.norm(delta)), 1e-9)
+                direction = delta / distance
+                deficit = safe_distance - distance + 5e-3
+                correction = deficit / max(dt * dt, 1e-9)
+                adjusted[i] += correction * direction
+                adjusted[j] -= correction * direction
+                updated = True
+        if not updated:
+            break
+        adjusted = _clip_controls(adjusted, accel_limits)
+    return adjusted
 
 
 def _task_completion_time(
@@ -80,35 +127,39 @@ def simulate_scenario(config: ScenarioConfig, controller_name: str) -> Experimen
     controller = _controller_lookup(controller_name)
     n_agents = config.positions.shape[0]
 
-    positions = np.zeros((config.steps + 1, n_agents, 2), dtype=float)
-    velocities = np.zeros((config.steps + 1, n_agents, 2), dtype=float)
-    controls = np.zeros((config.steps, n_agents, 2), dtype=float)
-    nominal_controls = np.zeros((config.steps, n_agents, 2), dtype=float)
-    qp_times_ms = np.zeros((config.steps, n_agents), dtype=float)
-    clearance_history = np.zeros((config.steps + 1,), dtype=float)
-    cbf_history = np.zeros((config.steps + 1,), dtype=float)
+    positions_history: list[np.ndarray] = [config.positions.copy()]
+    velocities_history: list[np.ndarray] = [config.velocities.copy()]
+    controls_history: list[np.ndarray] = []
+    nominal_controls_history: list[np.ndarray] = []
+    qp_times_history: list[np.ndarray] = []
+    clearance_history: list[float] = [
+        float(pairwise_clearance(config.positions, config.radii, config.safety_buffer).min())
+    ]
+    cbf_history: list[float] = [
+        float(
+            _compute_pairwise_cbf(
+                config.positions,
+                config.velocities,
+                config.accel_limits,
+                config.radii,
+                config.safety_buffer,
+            ).min()
+        )
+    ]
     estimation_history = None
-
-    positions[0] = config.positions
-    velocities[0] = config.velocities
-    clearance_history[0] = pairwise_clearance(positions[0], config.radii, config.safety_buffer).min()
-    cbf_history[0] = _compute_pairwise_cbf(
-        positions[0], velocities[0], config.accel_limits, config.radii, config.safety_buffer
-    ).min()
 
     alpha_estimates = None
     if controller_name == "uncertain_heterogeneous_barrier":
         floor = config.estimate_floor if config.estimate_floor is not None else float(np.min(config.accel_limits))
         alpha_estimates = np.full((n_agents, n_agents), floor, dtype=float)
         np.fill_diagonal(alpha_estimates, config.accel_limits)
-        estimation_history = np.zeros((config.steps + 1, n_agents, n_agents), dtype=float)
-        estimation_history[0] = alpha_estimates
+        estimation_history = [alpha_estimates.copy()]
 
-    last_step = config.steps
-    for step in range(config.steps):
+    step = 0
+    while True:
         kwargs = dict(
-            positions=positions[step],
-            velocities=velocities[step],
+            positions=positions_history[-1],
+            velocities=velocities_history[-1],
             goals=config.goals,
             accel_limits=config.accel_limits,
             kp=config.kp,
@@ -124,26 +175,42 @@ def simulate_scenario(config: ScenarioConfig, controller_name: str) -> Experimen
             kwargs["alpha_estimates"] = alpha_estimates
 
         step_result = controller(**kwargs)
-        controls[step] = step_result.control
-        nominal_controls[step] = step_result.nominal
-        qp_times_ms[step] = step_result.qp_times_ms
-        positions[step + 1], velocities[step + 1] = _step_dynamics(
-            positions[step],
-            velocities[step],
-            step_result.control,
+        applied_control = step_result.control
+        if controller_name != "nominal":
+            applied_control = _enforce_discrete_safety(
+                positions=positions_history[-1],
+                velocities=velocities_history[-1],
+                controls=step_result.control,
+                accel_limits=config.accel_limits,
+                speed_limits=config.speed_limits,
+                radii=config.radii,
+                safety_buffer=config.safety_buffer,
+                dt=config.dt,
+            )
+        controls_history.append(applied_control.copy())
+        nominal_controls_history.append(step_result.nominal.copy())
+        qp_times_history.append(step_result.qp_times_ms.copy())
+        next_positions, next_velocities = _step_dynamics(
+            positions_history[-1],
+            velocities_history[-1],
+            applied_control,
             config.speed_limits,
             config.dt,
         )
-        clearance_history[step + 1] = pairwise_clearance(
-            positions[step + 1], config.radii, config.safety_buffer
-        ).min()
-        cbf_history[step + 1] = _compute_pairwise_cbf(
-            positions[step + 1],
-            velocities[step + 1],
-            config.accel_limits,
-            config.radii,
-            config.safety_buffer,
-        ).min()
+        positions_history.append(next_positions)
+        velocities_history.append(next_velocities)
+        clearance_history.append(float(pairwise_clearance(next_positions, config.radii, config.safety_buffer).min()))
+        cbf_history.append(
+            float(
+                _compute_pairwise_cbf(
+                    next_positions,
+                    next_velocities,
+                    config.accel_limits,
+                    config.radii,
+                    config.safety_buffer,
+                ).min()
+            )
+        )
         if controller_name == "uncertain_heterogeneous_barrier":
             alpha_estimates = update_alpha_estimates(
                 alpha_estimates,
@@ -152,29 +219,32 @@ def simulate_scenario(config: ScenarioConfig, controller_name: str) -> Experimen
                 config.dt,
                 config.estimate_gain,
             )
-            estimation_history[step + 1] = alpha_estimates
-        if np.all(np.linalg.norm(positions[step + 1] - config.goals, axis=1) <= 0.15) and np.all(
-            np.linalg.norm(velocities[step + 1], axis=1) <= 0.05
+            estimation_history.append(alpha_estimates.copy())
+        if np.all(np.linalg.norm(next_positions - config.goals, axis=1) <= 0.15) and np.all(
+            np.linalg.norm(next_velocities, axis=1) <= 0.05
         ):
-            last_step = step + 1
+            break
+        step += 1
+        if not config.run_until_complete and step >= config.steps:
             break
 
-    positions = positions[: last_step + 1]
-    velocities = velocities[: last_step + 1]
-    controls = controls[:last_step]
-    nominal_controls = nominal_controls[:last_step]
-    qp_times_ms = qp_times_ms[:last_step]
-    clearance_history = clearance_history[: last_step + 1]
-    cbf_history = cbf_history[: last_step + 1]
+    positions = np.asarray(positions_history, dtype=float)
+    velocities = np.asarray(velocities_history, dtype=float)
+    controls = np.asarray(controls_history, dtype=float)
+    nominal_controls = np.asarray(nominal_controls_history, dtype=float)
+    qp_times_ms = np.asarray(qp_times_history, dtype=float)
+    clearance_history_array = np.asarray(clearance_history, dtype=float)
+    cbf_history_array = np.asarray(cbf_history, dtype=float)
     if estimation_history is not None:
-        estimation_history = estimation_history[: last_step + 1]
+        estimation_history = np.asarray(estimation_history, dtype=float)
+    last_step = positions.shape[0] - 1
 
     completion_step = _task_completion_time(positions, config.goals)
     control_deviation = np.linalg.norm(controls - nominal_controls, axis=2)
     summary = {
-        "min_clearance": float(clearance_history.min()),
-        "min_cbf": float(cbf_history.min()),
-        "collision": bool(clearance_history.min() < 0.0),
+        "min_clearance": float(clearance_history_array.min()),
+        "min_cbf": float(cbf_history_array.min()),
+        "collision": bool(clearance_history_array.min() < 0.0),
         "mean_qp_ms": float(qp_times_ms.mean()),
         "p95_qp_ms": float(np.percentile(qp_times_ms, 95)),
         "max_qp_ms": float(qp_times_ms.max()),
@@ -192,13 +262,13 @@ def simulate_scenario(config: ScenarioConfig, controller_name: str) -> Experimen
         name=config.name,
         controller=controller_name,
         summary=summary,
-        time=np.arange(config.steps + 1, dtype=float) * config.dt,
+        time=np.arange(last_step + 1, dtype=float) * config.dt,
         positions=positions,
         velocities=velocities,
         controls=controls,
         nominal_controls=nominal_controls,
-        clearance_history=clearance_history,
-        cbf_history=cbf_history,
+        clearance_history=clearance_history_array,
+        cbf_history=cbf_history_array,
         qp_times_ms=qp_times_ms,
         estimation_history=estimation_history,
         metadata={

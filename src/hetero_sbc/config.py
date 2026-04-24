@@ -18,6 +18,7 @@ class ScenarioConfig:
     gamma: np.ndarray
     dt: float = 0.05
     steps: int = 600
+    run_until_complete: bool = False
     kp: float = 1.0
     kd: float = 1.8
     safety_buffer: float = 0.0
@@ -44,4 +45,3 @@ class ExperimentResult:
 
 def as_array(values: Sequence[float]) -> np.ndarray:
     return np.asarray(values, dtype=float)
-

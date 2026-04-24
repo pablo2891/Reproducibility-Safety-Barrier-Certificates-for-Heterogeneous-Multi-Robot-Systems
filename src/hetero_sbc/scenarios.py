@@ -69,6 +69,22 @@ def baseline_six() -> ScenarioConfig:
     )
 
 
+def demo_small() -> ScenarioConfig:
+    return lane_swap(
+        n_agents=4,
+        lane_x=1.1,
+        lane_height=0.6,
+        agile_alpha=1.2,
+        cumbersome_alpha=0.6,
+        agile_radius=0.16,
+        cumbersome_radius=0.28,
+        speed_limit=0.6,
+        gamma=1.0,
+        steps=220,
+        large_agent_fraction=0.25,
+    )
+
+
 def scalability_case(n_agents: int) -> ScenarioConfig:
     return lane_swap(
         n_agents=n_agents,
@@ -82,6 +98,7 @@ def scalability_case(n_agents: int) -> ScenarioConfig:
         gamma=1.0,
         large_agent_fraction=0.25,
         steps=60,
+        run_until_complete=True,
     )
 
 
@@ -111,6 +128,8 @@ def uncertainty_case() -> ScenarioConfig:
 
 def named_scenario(name: str) -> ScenarioConfig:
     normalized = name.strip().lower()
+    if normalized in {"demo", "demo_small", "small"}:
+        return demo_small()
     if normalized in {"baseline", "baseline_six", "lane_swap_6"}:
         return baseline_six()
     if normalized in {"uncertainty", "uncertainty_baseline_six"}:
@@ -119,7 +138,7 @@ def named_scenario(name: str) -> ScenarioConfig:
         _, count = normalized.split("_", maxsplit=1)
         return scalability_case(int(count))
     raise ValueError(
-        "Unknown scenario name. Use one of: baseline, uncertainty, scalability_10, scalability_15, scalability_20."
+        "Unknown scenario name. Use one of: demo, baseline, uncertainty, or scalability_<count>."
     )
 
 
@@ -137,6 +156,8 @@ def lane_swap(
     safety_buffer: float = 0.0,
     steps: int = 500,
     dt: float = 0.05,
+    reverse_goal_order: bool = True,
+    run_until_complete: bool = False,
 ) -> ScenarioConfig:
     left_count = (n_agents + 1) // 2
     right_count = n_agents // 2
@@ -150,9 +171,13 @@ def lane_swap(
 
     goals = np.zeros_like(positions)
     goals[:left_count, 0] = lane_x
-    goals[:left_count, 1] = np.linspace(lane_height, -lane_height, left_count)
     goals[left_count:, 0] = -lane_x
-    goals[left_count:, 1] = np.linspace(lane_height, -lane_height, right_count)
+    if reverse_goal_order:
+        goals[:left_count, 1] = np.linspace(lane_height, -lane_height, left_count)
+        goals[left_count:, 1] = np.linspace(lane_height, -lane_height, right_count)
+    else:
+        goals[:left_count, 1] = left_y
+        goals[left_count:, 1] = right_y
 
     velocities = np.zeros_like(positions)
     n_large = max(1, int(round(n_agents * large_agent_fraction)))
@@ -175,6 +200,7 @@ def lane_swap(
         gamma=gamma_values,
         dt=dt,
         steps=steps,
+        run_until_complete=run_until_complete,
         kp=1.0,
         kd=1.8,
         safety_buffer=safety_buffer,

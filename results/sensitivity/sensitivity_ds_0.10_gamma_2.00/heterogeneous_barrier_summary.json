@@ -1,0 +1,58 @@
+{
+  "name": "sensitivity_ds_0.10_gamma_2.00",
+  "controller": "heterogeneous_barrier",
+  "summary": {
+    "min_clearance": 0.006801474903043281,
+    "min_cbf": 0.15540324656916704,
+    "collision": false,
+    "mean_qp_ms": 0.6399940499957464,
+    "p95_qp_ms": 0.9363161083456362,
+    "max_qp_ms": 0.9972896665810064,
+    "completion_step": null,
+    "mean_goal_error": 2.4808461326171303,
+    "mean_control_deviation": 1.0482743926695597,
+    "per_agent_control_deviation": [
+      0.8578476240276485,
+      0.9172983169636169,
+      1.2110233050361074,
+      1.2260393696721623,
+      0.8054473067948341,
+      1.2719904335229881
+    ]
+  },
+  "metadata": {
+    "accel_limits": [
+      0.6,
+      1.2,
+      1.2,
+      1.2,
+      1.2,
+      1.2
+    ],
+    "speed_limits": [
+      0.6,
+      0.6,
+      0.6,
+      0.6,
+      0.6,
+      0.6
+    ],
+    "gamma": [
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0,
+      2.0
+    ],
+    "radii": [
+      0.4,
+      0.2,
+      0.2,
+      0.2,
+      0.2,
+      0.2
+    ],
+    "safety_buffer": 0.1
+  }
+}

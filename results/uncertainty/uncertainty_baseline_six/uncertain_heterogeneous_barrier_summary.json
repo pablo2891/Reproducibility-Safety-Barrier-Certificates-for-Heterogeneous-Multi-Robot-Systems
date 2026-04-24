@@ -2,24 +2,27 @@
   "name": "uncertainty_baseline_six",
   "controller": "uncertain_heterogeneous_barrier",
   "summary": {
-    "min_clearance": 0.01347706485613609,
-    "min_cbf": 0.24683196537336977,
+    "min_clearance": 0.004256460497538084,
+    "min_pair_distance": 0.4042564604975381,
+    "min_cbf": 0.14299395224496803,
     "collision": false,
-    "mean_qp_ms": 0.7245884055717196,
-    "p95_qp_ms": 1.5480272832670992,
-    "max_qp_ms": 2.3972985000000335,
-    "completion_step": null,
-    "mean_goal_error": 2.7598588702439386,
-    "mean_control_deviation": 1.1992095269722292,
+    "all_goals_reached": true,
+    "mean_qp_ms": 0.5650490187254581,
+    "p95_qp_ms": 0.7473083333024988,
+    "max_qp_ms": 1.3544338332091381,
+    "completion_step": 356.0,
+    "termination_reason": "all_goals_reached",
+    "mean_goal_error": 0.00801606082199296,
+    "mean_control_deviation": 0.3958229286388139,
     "per_agent_control_deviation": [
-      0.7690064967374022,
-      1.1848093363069807,
-      1.3206498057923521,
-      1.5083661443886534,
-      1.0105817393825702,
-      1.4018436392254172
+      0.4054227153974514,
+      0.3067232620949775,
+      0.2988873155341647,
+      0.5543769801380558,
+      0.34717247302532794,
+      0.4623548256429066
     ],
-    "final_mean_alpha_estimate_error": 0.4231872012527465
+    "final_mean_alpha_estimate_error": 0.3055435081716795
   },
   "metadata": {
     "accel_limits": [

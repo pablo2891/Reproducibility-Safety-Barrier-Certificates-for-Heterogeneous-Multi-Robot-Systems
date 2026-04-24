@@ -114,13 +114,37 @@ def _enforce_discrete_safety(
 
 def _task_completion_time(
     positions: np.ndarray,
+    velocities: np.ndarray,
     goals: np.ndarray,
-    threshold: float = 0.15,
+    goal_tolerance: float,
+    velocity_tolerance: float,
 ) -> float | None:
     for step in range(positions.shape[0]):
-        if np.all(np.linalg.norm(positions[step] - goals, axis=1) <= threshold):
+        if _all_goals_reached(positions[step], velocities[step], goals, goal_tolerance, velocity_tolerance):
             return float(step)
     return None
+
+
+def _all_goals_reached(
+    positions: np.ndarray,
+    velocities: np.ndarray,
+    goals: np.ndarray,
+    goal_tolerance: float,
+    velocity_tolerance: float,
+) -> bool:
+    return bool(
+        np.all(np.linalg.norm(positions - goals, axis=1) <= goal_tolerance)
+        and np.all(np.linalg.norm(velocities, axis=1) <= velocity_tolerance)
+    )
+
+
+def _minimum_pair_distance(positions: np.ndarray) -> float:
+    n_agents = positions.shape[0]
+    min_distance = float("inf")
+    for i in range(n_agents):
+        for j in range(i + 1, n_agents):
+            min_distance = min(min_distance, float(np.linalg.norm(positions[i] - positions[j])))
+    return 0.0 if min_distance == float("inf") else min_distance
 
 
 def simulate_scenario(config: ScenarioConfig, controller_name: str) -> ExperimentResult:
@@ -147,6 +171,7 @@ def simulate_scenario(config: ScenarioConfig, controller_name: str) -> Experimen
         )
     ]
     estimation_history = None
+    termination_reason = "step_limit"
 
     alpha_estimates = None
     if controller_name == "uncertain_heterogeneous_barrier":
@@ -211,6 +236,9 @@ def simulate_scenario(config: ScenarioConfig, controller_name: str) -> Experimen
                 ).min()
             )
         )
+        if clearance_history[-1] < 0.0:
+            termination_reason = "collision"
+            break
         if controller_name == "uncertain_heterogeneous_barrier":
             alpha_estimates = update_alpha_estimates(
                 alpha_estimates,
@@ -220,12 +248,17 @@ def simulate_scenario(config: ScenarioConfig, controller_name: str) -> Experimen
                 config.estimate_gain,
             )
             estimation_history.append(alpha_estimates.copy())
-        if np.all(np.linalg.norm(next_positions - config.goals, axis=1) <= 0.15) and np.all(
-            np.linalg.norm(next_velocities, axis=1) <= 0.05
+        if _all_goals_reached(
+            next_positions,
+            next_velocities,
+            config.goals,
+            config.goal_tolerance,
+            config.velocity_tolerance,
         ):
+            termination_reason = "all_goals_reached"
             break
         step += 1
-        if not config.run_until_complete and step >= config.steps:
+        if step >= config.steps:
             break
 
     positions = np.asarray(positions_history, dtype=float)
@@ -239,16 +272,28 @@ def simulate_scenario(config: ScenarioConfig, controller_name: str) -> Experimen
         estimation_history = np.asarray(estimation_history, dtype=float)
     last_step = positions.shape[0] - 1
 
-    completion_step = _task_completion_time(positions, config.goals)
+    completion_step = _task_completion_time(
+        positions,
+        velocities,
+        config.goals,
+        config.goal_tolerance,
+        config.velocity_tolerance,
+    )
+    all_goals_reached = completion_step is not None
     control_deviation = np.linalg.norm(controls - nominal_controls, axis=2)
     summary = {
         "min_clearance": float(clearance_history_array.min()),
+        "min_pair_distance": float(
+            min(_minimum_pair_distance(position_step) for position_step in positions)
+        ),
         "min_cbf": float(cbf_history_array.min()),
         "collision": bool(clearance_history_array.min() < 0.0),
+        "all_goals_reached": all_goals_reached,
         "mean_qp_ms": float(qp_times_ms.mean()),
         "p95_qp_ms": float(np.percentile(qp_times_ms, 95)),
         "max_qp_ms": float(qp_times_ms.max()),
         "completion_step": completion_step,
+        "termination_reason": termination_reason,
         "mean_goal_error": float(np.linalg.norm(positions[-1] - config.goals, axis=1).mean()),
         "mean_control_deviation": float(control_deviation.mean()),
         "per_agent_control_deviation": control_deviation.mean(axis=0).tolist(),

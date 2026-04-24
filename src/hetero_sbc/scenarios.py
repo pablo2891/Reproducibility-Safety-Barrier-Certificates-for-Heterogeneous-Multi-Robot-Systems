@@ -64,8 +64,9 @@ def baseline_six() -> ScenarioConfig:
         cumbersome_radius=0.4,
         speed_limit=0.6,
         gamma=1.0,
-        steps=60,
+        steps=600,
         large_agent_fraction=1 / 6,
+        run_until_complete=True,
     )
 
 
@@ -97,7 +98,7 @@ def scalability_case(n_agents: int) -> ScenarioConfig:
         speed_limit=0.7,
         gamma=1.0,
         large_agent_fraction=0.25,
-        steps=60,
+        steps=600,
         run_until_complete=True,
     )
 
@@ -120,7 +121,6 @@ def sensitivity_cases(
 def uncertainty_case() -> ScenarioConfig:
     cfg = baseline_six()
     cfg.name = "uncertainty_baseline_six"
-    cfg.steps = 60
     cfg.estimate_floor = 0.2
     cfg.estimate_gain = 2.5
     return cfg
@@ -130,7 +130,7 @@ def named_scenario(name: str) -> ScenarioConfig:
     normalized = name.strip().lower()
     if normalized in {"demo", "demo_small", "small"}:
         return demo_small()
-    if normalized in {"baseline", "baseline_six", "lane_swap_6"}:
+    if normalized in {"baseline", "baseline_six", "lane_swap_6", "paper_baseline"}:
         return baseline_six()
     if normalized in {"uncertainty", "uncertainty_baseline_six"}:
         return uncertainty_case()

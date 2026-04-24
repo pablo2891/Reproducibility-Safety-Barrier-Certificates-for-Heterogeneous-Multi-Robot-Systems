@@ -41,13 +41,32 @@ class BarrierTests(unittest.TestCase):
         cfg = named_scenario("demo")
         result = simulate_scenario(cfg, "heterogeneous_barrier")
         self.assertFalse(result.summary["collision"])
+        self.assertTrue(result.summary["all_goals_reached"])
         self.assertIsNotNone(result.summary["completion_step"])
 
     def test_scalability_scenario_completes_without_collision_under_barrier_controller(self) -> None:
         cfg = named_scenario("scalability_10")
         result = simulate_scenario(cfg, "heterogeneous_barrier")
         self.assertFalse(result.summary["collision"])
+        self.assertTrue(result.summary["all_goals_reached"])
         self.assertIsNotNone(result.summary["completion_step"])
+
+    def test_baseline_nominal_controller_terminates_on_collision(self) -> None:
+        cfg = named_scenario("baseline")
+        result = simulate_scenario(cfg, "nominal")
+        self.assertTrue(result.summary["collision"])
+        self.assertFalse(result.summary["all_goals_reached"])
+        self.assertIsNone(result.summary["completion_step"])
+        self.assertEqual(result.summary["termination_reason"], "collision")
+
+    def test_baseline_heterogeneous_barrier_completes_swap(self) -> None:
+        cfg = named_scenario("baseline")
+        result = simulate_scenario(cfg, "heterogeneous_barrier")
+        self.assertFalse(result.summary["collision"])
+        self.assertTrue(result.summary["all_goals_reached"])
+        self.assertIsNotNone(result.summary["completion_step"])
+        self.assertEqual(result.summary["termination_reason"], "all_goals_reached")
+        self.assertIn("min_pair_distance", result.summary)
 
 
 if __name__ == "__main__":

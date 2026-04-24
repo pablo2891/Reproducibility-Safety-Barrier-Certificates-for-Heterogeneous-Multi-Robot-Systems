@@ -4,7 +4,7 @@ Reproduction scaffold for the paper "Safety Barrier Certificates for Heterogeneo
 
 The codebase implements a deterministic simulation harness for the paper's double-integrator setup and reproduces the main qualitative and quantitative experiments:
 
-- Baseline six-robot swap scenario.
+- Canonical six-robot swap comparison between `nominal`, `symmetric_barrier`, and `heterogeneous_barrier`.
 - Scalability runs with `N = 10, 15, 20`.
 - Sensitivity sweeps over safety distance buffer `D_s` and CBF parameter `gamma`.
 - Unknown neighbor acceleration limits with conservative online estimates.
@@ -67,11 +67,16 @@ This writes:
 - Aggregate plots inside `results/scalability/` and `results/sensitivity/`
 - Optional GIF animations inside `results/visualizations/<scenario>/`
 
+The canonical paper-style comparison is stored in `results/summary/experiment_summary.json`
+under both `baseline_comparison` and `canonical_swap_comparison`.
+
 ## Notes
 
 - The simulation follows the paper's double-integrator model and uses a centralized heterogeneous barrier QP for the main reproduction runs, plus a naive symmetric barrier baseline and a conservative-estimate variant for unknown neighbor limits.
+- The default baseline scenario now runs until one of three terminal conditions occurs: collision, all goals reached with low residual velocity, or the configured step budget is exhausted. This makes the baseline comparison closer to the paper's "collide vs complete safely" claim.
 - The default geometry is a lane-swap scenario rather than an all-to-center circle, which keeps the dense multi-robot cases numerically tractable while preserving the swap-style conflict pattern.
-- The default scalability sweep uses the larger original geometry with `N = 10, 15, 20` and now runs until each scalability case reaches the simulator's completion condition.
+- Each run now logs `collision`, `all_goals_reached`, `completion_step`, `min_pair_distance`, and `termination_reason` in addition to the older timing and clearance metrics.
+- The default scalability sweep uses the larger original geometry with `N = 10, 15, 20` and now runs until each scalability case reaches the simulator's completion condition or exhausts the configured step budget.
 - The simulator applies a discrete-time safety clamp after the barrier controller so the continuous-time barrier policy remains robust under the finite integration step used for visualization and experiments.
 - The scalability plot reports `p95` QP solve time to reduce sensitivity to solver jitter.
 - Physical Robotarium deployment is not included yet; this repository currently covers the simulation side of the reproduction.

@@ -62,6 +62,7 @@ def run_experiment_suite(output_dir: str | Path) -> dict:
     rows: list[dict] = []
     artifacts: dict[str, list[dict]] = {
         "baseline_comparison": [],
+        "canonical_swap_comparison": [],
         "scalability": [],
         "sensitivity": [],
         "uncertainty": [],
@@ -74,6 +75,7 @@ def run_experiment_suite(output_dir: str | Path) -> dict:
         row = {"experiment": baseline_cfg.name, "controller": controller_name, **result.summary}
         rows.append(row)
         artifacts["baseline_comparison"].append(row)
+        artifacts["canonical_swap_comparison"].append(row)
 
     scalability_results: list[ExperimentResult] = []
     for n_agents in SCALABILITY_AGENT_COUNTS:

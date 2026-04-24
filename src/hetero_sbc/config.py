@@ -21,6 +21,8 @@ class ScenarioConfig:
     run_until_complete: bool = False
     kp: float = 1.0
     kd: float = 1.8
+    goal_tolerance: float = 0.15
+    velocity_tolerance: float = 0.05
     safety_buffer: float = 0.0
     estimate_floor: float | None = None
     estimate_gain: float = 3.0

@@ -3,12 +3,15 @@
   "controller": "symmetric_barrier",
   "summary": {
     "min_clearance": -0.004697065500162079,
+    "min_pair_distance": 0.39530293449983794,
     "min_cbf": -1.0349932021283574,
     "collision": true,
-    "mean_qp_ms": 1.0449682499862927,
-    "p95_qp_ms": 1.2635189992579399,
-    "max_qp_ms": 1.6628399989713216,
+    "all_goals_reached": false,
+    "mean_qp_ms": 0.9597120001469901,
+    "p95_qp_ms": 1.1586758011617349,
+    "max_qp_ms": 1.486641001974931,
     "completion_step": null,
+    "termination_reason": "collision",
     "mean_goal_error": 2.4536047859782424,
     "mean_control_deviation": 1.0549511132759144,
     "per_agent_control_deviation": [

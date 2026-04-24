@@ -2,27 +2,32 @@
   "name": "uncertainty_baseline_six",
   "controller": "uncertain_heterogeneous_barrier",
   "summary": {
-    "min_clearance": 0.004256460497538084,
-    "min_pair_distance": 0.4042564604975381,
-    "min_cbf": 0.14299395224496803,
+    "min_clearance": 0.017975854471629527,
+    "min_pair_distance": 0.41797585447162955,
+    "min_cbf": 0.2870522339699557,
     "collision": false,
     "all_goals_reached": true,
-    "mean_qp_ms": 0.5650490187254581,
-    "p95_qp_ms": 0.7473083333024988,
-    "max_qp_ms": 1.3544338332091381,
-    "completion_step": 356.0,
+    "mean_qp_ms": 0.8954589175775274,
+    "p95_qp_ms": 1.6978611583302285,
+    "max_qp_ms": 14.040118832781445,
+    "completion_step": 277.0,
     "termination_reason": "all_goals_reached",
-    "mean_goal_error": 0.00801606082199296,
-    "mean_control_deviation": 0.3958229286388139,
+    "mean_goal_error": 0.006706889389694825,
+    "mean_control_deviation": 0.41892280581532737,
     "per_agent_control_deviation": [
-      0.4054227153974514,
-      0.3067232620949775,
-      0.2988873155341647,
-      0.5543769801380558,
-      0.34717247302532794,
-      0.4623548256429066
+      0.38337353512957884,
+      0.35238112866579707,
+      0.44976333000328406,
+      0.5098852484250933,
+      0.3281718705196836,
+      0.4899617221485293
     ],
-    "final_mean_alpha_estimate_error": 0.3055435081716795
+    "deadlock_count": 0,
+    "deadlock_agents": [],
+    "first_deadlock_step": null,
+    "collision_after_clamping": false,
+    "infeasibility_before_collision": false,
+    "final_mean_alpha_estimate_error": 0.05424967406859518
   },
   "metadata": {
     "accel_limits": [
@@ -57,6 +62,185 @@
       0.2,
       0.2
     ],
-    "safety_buffer": 0.0
+    "safety_buffer": 0.0,
+    "pair_indices": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        3
+      ],
+      [
+        0,
+        4
+      ],
+      [
+        0,
+        5
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        1,
+        5
+      ],
+      [
+        2,
+        3
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        4,
+        5
+      ]
+    ],
+    "pairwise_min_cbf": {
+      "0-1": 0.2870522339699557,
+      "0-2": 0.4934784306175436,
+      "0-3": 1.0249697649915461,
+      "0-4": 0.8013380456272813,
+      "0-5": 0.6754691769021236,
+      "1-2": 0.36496641311103234,
+      "1-3": 0.4172323074249797,
+      "1-4": 0.42660168300358314,
+      "1-5": 1.1591683951008855,
+      "2-3": 0.9605314551125314,
+      "2-4": 0.42159555459357273,
+      "2-5": 0.42482140290033776,
+      "3-4": 0.35493292939646537,
+      "3-5": 1.4537181666860555,
+      "4-5": 0.29244797648542487
+    },
+    "pairwise_min_cbf_step": {
+      "0-1": 71,
+      "0-2": 102,
+      "0-3": 53,
+      "0-4": 129,
+      "0-5": 127,
+      "1-2": 100,
+      "1-3": 100,
+      "1-4": 92,
+      "1-5": 51,
+      "2-3": 110,
+      "2-4": 101,
+      "2-5": 95,
+      "3-4": 106,
+      "3-5": 106,
+      "4-5": 124
+    },
+    "pairwise_min_clearance": {
+      "0-1": 0.02331689970923556,
+      "0-2": 0.07380687046123247,
+      "0-3": 0.4628712759938678,
+      "0-4": 0.24558941119207978,
+      "0-5": 0.16361571006266085,
+      "1-2": 0.028307476830036205,
+      "1-3": 0.0367512924571915,
+      "1-4": 0.03942338881213958,
+      "1-5": 0.35001063460029147,
+      "2-3": 0.25156465334877476,
+      "2-4": 0.037415455437871004,
+      "2-5": 0.039042128179318236,
+      "3-4": 0.026842678108373874,
+      "3-5": 0.4490597401773332,
+      "4-5": 0.017975854471629527
+    },
+    "pairwise_min_clearance_step": {
+      "0-1": 72,
+      "0-2": 104,
+      "0-3": 77,
+      "0-4": 135,
+      "0-5": 131,
+      "1-2": 102,
+      "1-3": 103,
+      "1-4": 94,
+      "1-5": 96,
+      "2-3": 114,
+      "2-4": 104,
+      "2-5": 97,
+      "3-4": 106,
+      "3-5": 108,
+      "4-5": 125
+    },
+    "active_neighbor_counts": null,
+    "qp_fallback_history": null,
+    "qp_infeasible_history": null,
+    "first_infeasible_event": null,
+    "collision_event": null,
+    "deadlock": {
+      "deadlock_count": 0,
+      "deadlock_agents": [],
+      "first_deadlock_step": null,
+      "deadlock_start_steps": {},
+      "deadlock_window_steps": 20,
+      "deadlock_speed_threshold": 0.05,
+      "deadlock_displacement_threshold": 0.03
+    },
+    "stopped_not_at_goal": {
+      "stopped_not_at_goal_steps": [
+        7,
+        16,
+        10,
+        10,
+        47,
+        25
+      ],
+      "stopped_not_at_goal_near_robots_steps": [
+        1,
+        8,
+        1,
+        4,
+        47,
+        25
+      ],
+      "stopped_not_at_goal_isolated_steps": [
+        6,
+        8,
+        9,
+        6,
+        0,
+        0
+      ],
+      "stopped_not_at_goal_control_thresholds": [
+        0.06,
+        0.12,
+        0.12,
+        0.12,
+        0.12,
+        0.12
+      ],
+      "stopped_not_at_goal_near_clearance_threshold": 0.15
+    }
   }
 }

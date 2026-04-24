@@ -6,7 +6,7 @@ import numpy as np
 
 from hetero_sbc.barriers import cbf_value, pairwise_safe_distance
 from hetero_sbc.controllers import heterogeneous_barrier_controller
-from hetero_sbc.scenarios import baseline_six, named_scenario
+from hetero_sbc.scenarios import baseline_six, named_scenario, paper_baseline_six, paper_scalability_case
 from hetero_sbc.simulator import simulate_scenario
 
 
@@ -44,6 +44,15 @@ class BarrierTests(unittest.TestCase):
         self.assertTrue(result.summary["all_goals_reached"])
         self.assertIsNotNone(result.summary["completion_step"])
 
+    def test_decentralized_barrier_demo_remains_collision_free(self) -> None:
+        cfg = named_scenario("demo")
+        result = simulate_scenario(cfg, "decentralized_heterogeneous_barrier")
+        self.assertFalse(result.summary["collision"])
+        self.assertTrue(result.summary["all_goals_reached"])
+        self.assertEqual(result.summary["termination_reason"], "all_goals_reached")
+        self.assertIn("mean_active_neighbors", result.summary)
+        self.assertIn("qp_fallback_count", result.summary)
+
     def test_scalability_scenario_completes_without_collision_under_barrier_controller(self) -> None:
         cfg = named_scenario("scalability_10")
         result = simulate_scenario(cfg, "heterogeneous_barrier")
@@ -67,6 +76,42 @@ class BarrierTests(unittest.TestCase):
         self.assertIsNotNone(result.summary["completion_step"])
         self.assertEqual(result.summary["termination_reason"], "all_goals_reached")
         self.assertIn("min_pair_distance", result.summary)
+
+    def test_paper_baseline_decentralized_barrier_completes_swap(self) -> None:
+        cfg = paper_baseline_six()
+        result = simulate_scenario(cfg, "decentralized_heterogeneous_barrier")
+        self.assertFalse(result.summary["collision"])
+        self.assertTrue(result.summary["all_goals_reached"])
+        self.assertEqual(result.summary["termination_reason"], "all_goals_reached")
+        self.assertFalse(result.summary["collision_after_clamping"])
+
+    def test_lane_swap_stress_test_records_first_infeasible_event(self) -> None:
+        cfg = baseline_six()
+        result = simulate_scenario(cfg, "decentralized_heterogeneous_barrier")
+        self.assertTrue(result.summary["collision"])
+        self.assertGreater(result.summary["qp_infeasible_count"], 0)
+        self.assertIn("first_infeasible_step", result.summary)
+        self.assertIn("first_infeasible_pair", result.summary)
+        self.assertIn("first_infeasible_h_ij", result.summary)
+        self.assertIn("infeasibility_before_collision", result.summary)
+        self.assertIsNotNone(result.metadata["first_infeasible_event"])
+        self.assertIsNotNone(result.metadata["collision_event"])
+        self.assertIn("pair_h_ij_window", result.metadata["first_infeasible_event"])
+
+    def test_paper_scalability_smoke_runs_record_summary_fields(self) -> None:
+        for n_agents in (10, 15):
+            cfg = paper_scalability_case(n_agents)
+            result = simulate_scenario(cfg, "decentralized_heterogeneous_barrier")
+            self.assertEqual(result.name, f"paper_scalability_{n_agents}")
+            self.assertIn("collision", result.summary)
+            self.assertIn("all_goals_reached", result.summary)
+            self.assertIn("completion_step", result.summary)
+            self.assertIn("min_clearance", result.summary)
+            self.assertIn("min_pair_distance", result.summary)
+            self.assertIn("qp_infeasible_count", result.summary)
+            self.assertIn("deadlock_count", result.summary)
+            self.assertIn("stopped_not_at_goal", result.metadata)
+            self.assertIn("pairwise_min_cbf", result.metadata)
 
 
 if __name__ == "__main__":

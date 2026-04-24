@@ -66,6 +66,81 @@ def plot_scalability(results: list[ExperimentResult], output_path: Path) -> None
     plt.close(fig)
 
 
+def plot_scalability_comparison(results: list[ExperimentResult], output_path: Path) -> None:
+    if not results:
+        return
+    controller_order = []
+    grouped: dict[str, list[ExperimentResult]] = {}
+    for result in results:
+        if result.controller not in grouped:
+            grouped[result.controller] = []
+            controller_order.append(result.controller)
+        grouped[result.controller].append(result)
+
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+    for controller in controller_order:
+        controller_results = sorted(grouped[controller], key=lambda item: item.positions.shape[1])
+        agent_counts = [r.positions.shape[1] for r in controller_results]
+        mean_qp = [r.summary["p95_qp_ms"] for r in controller_results]
+        min_clearance = [r.summary["min_clearance"] for r in controller_results]
+        axes[0].plot(agent_counts, mean_qp, marker="o", label=controller)
+        axes[1].plot(agent_counts, min_clearance, marker="o", label=controller)
+
+    axes[0].set_xlabel("Number of robots")
+    axes[0].set_ylabel("P95 QP solve time [ms]")
+    axes[0].grid(True, alpha=0.2)
+    axes[0].legend(fontsize=8)
+    axes[1].axhline(0.0, color="tab:red", linestyle="--", linewidth=1)
+    axes[1].set_xlabel("Number of robots")
+    axes[1].set_ylabel("Minimum clearance [m]")
+    axes[1].grid(True, alpha=0.2)
+    axes[1].legend(fontsize=8)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=160)
+    plt.close(fig)
+
+
+def plot_outcome_breakdown(rows: list[dict], output_path: Path) -> None:
+    if not rows:
+        return
+    labels = []
+    success_runs = []
+    deadlock_runs = []
+    collision_runs = []
+    incomplete_runs = []
+    for row in rows:
+        controller = row["controller"].replace("_heterogeneous_barrier", "_het")
+        labels.append(f'{row["experiment"]}\n{controller}')
+        success_runs.append(row["success_runs"])
+        deadlock_runs.append(row["deadlock_runs"])
+        collision_runs.append(row["collision_runs"])
+        incomplete_runs.append(row["incomplete_runs"])
+
+    x = np.arange(len(rows))
+    fig, ax = plt.subplots(figsize=(max(8, 1.6 * len(rows)), 4.5))
+    ax.bar(x, success_runs, label="success")
+    ax.bar(x, deadlock_runs, bottom=success_runs, label="deadlock")
+    ax.bar(
+        x,
+        collision_runs,
+        bottom=np.asarray(success_runs) + np.asarray(deadlock_runs),
+        label="collision",
+    )
+    ax.bar(
+        x,
+        incomplete_runs,
+        bottom=np.asarray(success_runs) + np.asarray(deadlock_runs) + np.asarray(collision_runs),
+        label="incomplete",
+    )
+    ax.set_xticks(x, labels, rotation=35, ha="right")
+    ax.set_ylabel("Runs")
+    ax.grid(True, axis="y", alpha=0.2)
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=160)
+    plt.close(fig)
+
+
 def plot_sensitivity_grid(
     ds_values: list[float],
     gamma_values: list[float],

@@ -50,7 +50,7 @@ def full_barrier_rhs(
     sqrt_term = math.sqrt(2.0 * max(alpha_i + alpha_j, EPS) * gap)
     projection = float(delta_v.dot(delta_p))
     return (
-        gamma * h_ij**3 / distance
+        gamma * h_ij**3 * distance
         - (projection**2) / (distance**2)
         + float(delta_v.dot(delta_v))
         + (alpha_i + alpha_j) * projection / max(sqrt_term, EPS)
@@ -79,9 +79,6 @@ def strategy_c_constraint(
     h_ij = cbf_value(delta_p, delta_v, alpha_i, alpha_j, safe_distance)
     projection = float(delta_p.dot(delta_v))
     local_terms = projection / (distance**2) * float(delta_p.dot(v_i)) - float(delta_v.dot(v_i))
-    rhs = weight * (
-        gamma_i * h_ij**3 / distance
-        + math.sqrt(total_alpha) * projection / math.sqrt(2.0 * gap)
-    ) - local_terms
+    rhs = weight * (gamma_i * h_ij**3 * distance + math.sqrt(total_alpha) * projection / math.sqrt(2.0 * gap))
+    rhs -= local_terms
     return -delta_p.astype(float), float(rhs), float(h_ij)
-

@@ -7,6 +7,13 @@ import numpy as np
 from .config import ScenarioConfig
 
 
+def paper_gamma_profile(n_agents: int, low: float = 1.0, high: float = 3.0) -> np.ndarray:
+    if n_agents <= 1:
+        return np.asarray([high], dtype=float)
+    edge_distance = np.abs(np.linspace(-1.0, 1.0, n_agents))
+    return low + (high - low) * edge_distance
+
+
 def circle_swap(
     n_agents: int,
     radius: float,
@@ -71,7 +78,7 @@ def baseline_six() -> ScenarioConfig:
 
 
 def demo_small() -> ScenarioConfig:
-    return lane_swap(
+    cfg = lane_swap(
         n_agents=4,
         lane_x=1.1,
         lane_height=0.6,
@@ -81,9 +88,56 @@ def demo_small() -> ScenarioConfig:
         cumbersome_radius=0.28,
         speed_limit=0.6,
         gamma=1.0,
-        steps=220,
+        steps=400,
         large_agent_fraction=0.25,
     )
+    cfg.gamma[:] = paper_gamma_profile(cfg.positions.shape[0], low=1.0, high=2.0)
+    return cfg
+
+
+def paper_baseline_six() -> ScenarioConfig:
+    cfg = circle_swap(
+        n_agents=6,
+        radius=1.8,
+        agile_alpha=1.2,
+        cumbersome_alpha=0.6,
+        agile_radius=0.2,
+        cumbersome_radius=0.4,
+        speed_limit=0.6,
+        gamma=1.0,
+        large_agent_fraction=1 / 6,
+        steps=2000,
+    )
+    cfg.run_until_complete = True
+    cfg.gamma[:] = paper_gamma_profile(cfg.positions.shape[0], low=1.0, high=3.0)
+    cfg.name = "paper_baseline_six"
+    return cfg
+
+
+def paper_scalability_case(n_agents: int) -> ScenarioConfig:
+    # Preserve the six-robot paper baseline's adjacent chord spacing as the
+    # swarm grows so the radial layout remains comparable across N.
+    base_radius = 1.8
+    base_chord_spacing = 2.0 * base_radius * math.sin(math.pi / 6.0)
+    radius = base_chord_spacing / max(2.0 * math.sin(math.pi / n_agents), 1e-6)
+    agile_radius = 0.2 if n_agents <= 6 else 0.16
+    cumbersome_radius = 0.4 if n_agents <= 6 else 0.28
+    cfg = circle_swap(
+        n_agents=n_agents,
+        radius=radius,
+        agile_alpha=1.2,
+        cumbersome_alpha=0.6,
+        agile_radius=agile_radius,
+        cumbersome_radius=cumbersome_radius,
+        speed_limit=0.6,
+        gamma=1.0,
+        large_agent_fraction=1 / 6,
+        steps=2000,
+    )
+    cfg.run_until_complete = True
+    cfg.gamma[:] = paper_gamma_profile(cfg.positions.shape[0], low=1.0, high=3.0)
+    cfg.name = f"paper_scalability_{n_agents}"
+    return cfg
 
 
 def scalability_case(n_agents: int) -> ScenarioConfig:
@@ -132,13 +186,18 @@ def named_scenario(name: str) -> ScenarioConfig:
         return demo_small()
     if normalized in {"baseline", "baseline_six", "lane_swap_6", "paper_baseline"}:
         return baseline_six()
+    if normalized in {"paper_circle", "paper_baseline_six", "circle_baseline"}:
+        return paper_baseline_six()
+    if normalized.startswith("paper_scalability_"):
+        _, _, count = normalized.split("_", maxsplit=2)
+        return paper_scalability_case(int(count))
     if normalized in {"uncertainty", "uncertainty_baseline_six"}:
         return uncertainty_case()
     if normalized.startswith("scalability_"):
         _, count = normalized.split("_", maxsplit=1)
         return scalability_case(int(count))
     raise ValueError(
-        "Unknown scenario name. Use one of: demo, baseline, uncertainty, or scalability_<count>."
+        "Unknown scenario name. Use one of: demo, baseline, paper_baseline_six, paper_scalability_<count>, uncertainty, or scalability_<count>."
     )
 
 

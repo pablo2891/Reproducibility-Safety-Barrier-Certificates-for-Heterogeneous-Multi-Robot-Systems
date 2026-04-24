@@ -12,12 +12,21 @@ def main() -> None:
     parser.add_argument(
         "--scenario",
         default="demo",
-        help="Scenario name: demo, baseline, uncertainty, or scalability_<count>",
+        help="Scenario name: demo, baseline, paper_baseline_six, paper_scalability_<count>, uncertainty, or scalability_<count>",
     )
     parser.add_argument(
         "--controller",
         default="heterogeneous_barrier",
-        choices=("nominal", "symmetric_barrier", "heterogeneous_barrier", "uncertain_heterogeneous_barrier"),
+        choices=(
+            "nominal",
+            "symmetric_barrier",
+            "heterogeneous_barrier",
+            "decentralized_heterogeneous_barrier",
+            "centralized_heterogeneous_barrier",
+            "uncertain_heterogeneous_barrier",
+            "decentralized_uncertain_heterogeneous_barrier",
+            "centralized_uncertain_heterogeneous_barrier",
+        ),
         help="Controller to simulate.",
     )
     parser.add_argument("--output", default=None, help="Output GIF path.")
@@ -30,7 +39,11 @@ def main() -> None:
     if args.steps is not None:
         config.steps = args.steps
         config.run_until_complete = False
-    if args.controller == "uncertain_heterogeneous_barrier" and args.scenario == "baseline":
+    if args.controller in {
+        "uncertain_heterogeneous_barrier",
+        "decentralized_uncertain_heterogeneous_barrier",
+        "centralized_uncertain_heterogeneous_barrier",
+    } and args.scenario == "baseline":
         config = named_scenario("uncertainty")
 
     result = simulate_scenario(config, args.controller)

@@ -2,30 +2,31 @@
   "name": "lane_swap_10",
   "controller": "heterogeneous_barrier",
   "summary": {
-    "min_clearance": 2.829136518905928e-05,
-    "min_pair_distance": 0.32221010421026125,
-    "min_cbf": -0.00021055619019804545,
+    "min_clearance": 1.5759234810341916e-05,
+    "min_pair_distance": 0.32001575923481035,
+    "min_cbf": 0.0035723375350114007,
     "collision": false,
     "all_goals_reached": true,
-    "mean_qp_ms": 0.978280097006426,
-    "p95_qp_ms": 2.0140774999163114,
-    "max_qp_ms": 18.120980199819314,
-    "completion_step": 301.0,
+    "mean_qp_ms": 1.7568438626049176,
+    "p95_qp_ms": 5.0246785998751875,
+    "max_qp_ms": 37.135782499899506,
+    "completion_step": 238.0,
     "termination_reason": "all_goals_reached",
-    "mean_goal_error": 0.017374023685789462,
-    "mean_control_deviation": 0.48614671989021313,
+    "mean_goal_error": 0.018405651366805865,
+    "mean_control_deviation": 0.5273592442076286,
     "per_agent_control_deviation": [
-      0.49304664189807396,
-      0.5614074735786528,
-      0.4757387821871402,
-      0.6221867232859427,
-      0.2783540031428023,
-      0.27835400314320513,
-      0.6221867122288545,
-      0.4757387686233045,
-      0.5614074717210242,
-      0.4930466190931302
-    ]
+      0.312645205879526,
+      0.6507029291383021,
+      0.4227317935195839,
+      0.6677785375079712,
+      0.5829377549940743,
+      0.5829377549913469,
+      0.6677785375087797,
+      0.42273179351961826,
+      0.6507029291386919,
+      0.3126452058783913
+    ],
+    "collision_after_clamping": false
   },
   "metadata": {
     "accel_limits": [
@@ -76,6 +77,10 @@
       0.16,
       0.28
     ],
-    "safety_buffer": 0.0
+    "safety_buffer": 0.0,
+    "active_neighbor_counts": null,
+    "qp_fallback_history": null,
+    "qp_infeasible_history": null,
+    "first_infeasible_event": null
   }
 }
